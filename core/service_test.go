@@ -45,7 +45,7 @@ func TestGet(t *testing.T) {
 	defer delete(store, key)
 
 	// Read a non-thing
-	val, err = Get(key)
+	_, err = Get(key)
 	if err == nil {
 		t.Error("expected an error")
 	}
@@ -80,7 +80,10 @@ func TestDelete(t *testing.T) {
 		t.Error("key/value doesn't exist")
 	}
 
-	Delete(key)
+	err := Delete(key)
+	if err != nil {
+		t.Error(err)
+	}
 
 	_, contains = store[key]
 	if contains {
