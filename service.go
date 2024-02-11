@@ -8,9 +8,11 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/nfrank1995/key-value-store/core"
+	"github.com/nfrank1995/key-value-store/transac"
 )
 
-var transact *TransactionLogger
+var transact *transac.TransactionLogger
 
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +36,7 @@ func keyValuePutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = Put(key, string(value))
+	err = core.Put(key, string(value))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -51,8 +53,8 @@ func keyValueGetHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key := vars["key"]
 
-	value, err := Get(key)
-	if errors.Is(err, ErrorNoSuchKey) {
+	value, err := core.Get(key)
+	if errors.Is(err, core.ErrorNoSuchKey) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
@@ -74,7 +76,7 @@ func keyValueDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key := vars["key"]
 
-	err := Delete(key)
+	err := core.Delete(key)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -87,13 +89,13 @@ func keyValueDeleteHandler(w http.ResponseWriter, r *http.Request) {
 
 func initializeTransactionLog() error {
 	var err error
-	transact, err := NewTransactionLogger("/tmp/transactions.log")
+	transact, err := transac.NewTransactionLogger("/tmp/transactions.log")
 	if err != nil {
 		return fmt.Errorf("failed to create transaction logger: %w", err)
 	}
 
 	events, errors := transact.ReadEvents()
-	count, ok, e := 0, true, Event{}
+	count, ok, e := 0, true, transac.Event{}
 
 	for ok && err == nil {
 		select {
@@ -101,11 +103,11 @@ func initializeTransactionLog() error {
 
 		case e, ok = <-events:
 			switch e.EventType {
-			case EventDelete:
-				err = Delete(e.Key)
+			case transac.EventDelete:
+				err = core.Delete(e.Key)
 				count++
-			case EventPut:
-				err = Put(e.Key, e.Value)
+			case transac.EventPut:
+				err = core.Put(e.Key, e.Value)
 				count++
 			}
 		}
