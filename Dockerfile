@@ -14,7 +14,7 @@ COPY *.go ./
 
 RUN make
 
-FROM alpine:latest AS production
+FROM scratch AS production
 
 COPY --from=builder /app/target .
 

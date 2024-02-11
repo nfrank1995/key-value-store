@@ -9,5 +9,5 @@ lint: fmt
 .PHONY:lint
 
 build: lint
-	CGO_ENABLED=0 GOOS=linux go build -o target/server main.go
+	CGO_ENABLED=0 GOOS=linux go build -o target/server service.go
 .PHONY:build
