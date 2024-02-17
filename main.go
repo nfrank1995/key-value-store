@@ -8,11 +8,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/nfrank1995/key-value-store/core"
-	"github.com/nfrank1995/key-value-store/transac"
 )
 
-var transact *transac.TransactionLogger
+var transact TransactionLogger
 
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -36,7 +34,7 @@ func keyValuePutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = core.Put(key, string(value))
+	err = Put(key, string(value))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -53,8 +51,8 @@ func keyValueGetHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key := vars["key"]
 
-	value, err := core.Get(key)
-	if errors.Is(err, core.ErrorNoSuchKey) {
+	value, err := Get(key)
+	if errors.Is(err, ErrorNoSuchKey) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
@@ -76,7 +74,7 @@ func keyValueDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key := vars["key"]
 
-	err := core.Delete(key)
+	err := Delete(key)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -89,13 +87,13 @@ func keyValueDeleteHandler(w http.ResponseWriter, r *http.Request) {
 
 func initializeTransactionLog() error {
 	var err error
-	transact, err := transac.NewTransactionLogger("/tmp/transactions.log")
+	transact, err := NewTransactionLogger("/tmp/transactions.log")
 	if err != nil {
 		return fmt.Errorf("failed to create transaction logger: %w", err)
 	}
 
 	events, errors := transact.ReadEvents()
-	count, ok, e := 0, true, transac.Event{}
+	count, ok, e := 0, true, Event{}
 
 	for ok && err == nil {
 		select {
@@ -103,11 +101,11 @@ func initializeTransactionLog() error {
 
 		case e, ok = <-events:
 			switch e.EventType {
-			case transac.EventDelete:
-				err = core.Delete(e.Key)
+			case EventDelete:
+				err = Delete(e.Key)
 				count++
-			case transac.EventPut:
-				err = core.Put(e.Key, e.Value)
+			case EventPut:
+				err = Put(e.Key, e.Value)
 				count++
 			}
 		}

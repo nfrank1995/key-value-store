@@ -1,4 +1,4 @@
-.DEFAULT_GOAL := build
+.DEFAULT_GOAL := build-linux
 
 fmt:
 	go fmt ./...
@@ -8,6 +8,10 @@ lint: fmt
 	golangci-lint run
 .PHONY:lint
 
-build: lint
-	CGO_ENABLED=0 GOOS=linux go build -o target/server main.go
-.PHONY:build
+build-linux: lint
+	CGO_ENABLED=0 GOOS=linux go build -o target/key-value-store-linux
+.PHONY:build-linux
+
+build-darwin: lint
+	CGO_ENABLED=0 GOOS=darwin go build -o target/key-value-store-darwin
+.PHONY:build-darwin

@@ -16,6 +16,6 @@ RUN make
 
 FROM scratch AS production
 
-COPY --from=builder /app/target .
+COPY --from=builder /app/target/key-value-store-linux .
 
-CMD ["./server"]
+CMD ["./key-value-store-linux"]
